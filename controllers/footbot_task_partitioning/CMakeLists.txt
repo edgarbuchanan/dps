@@ -1,0 +1,5 @@
+add_library(footbot_task_partitioning SHARED footbot_forager.h footbot_forager.cpp footbot_food.h footbot_food.cpp)
+target_link_libraries(footbot_task_partitioning
+  argos3core_simulator
+  argos3plugin_simulator_footbot
+  argos3plugin_simulator_genericrobot)
