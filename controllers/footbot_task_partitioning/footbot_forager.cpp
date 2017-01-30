@@ -501,14 +501,13 @@ void CFootBotForager::SetWheelSpeedsFromVector(const CVector2& c_heading) {
 
 	/* Source angle */
 	if(IsReturningToSource()){
-		cTargetAngle.SetValue(atan((cSourcePosition[1] - tPosition.Position[1]) /
+		cTargetAngle.SetValue(atan2((cSourcePosition[1] - tPosition.Position[1]) ,
 				(cSourcePosition[0] - tPosition.Position[0])) * 180 / ARGOS_PI);
-		if(cSourcePosition[0] > tPosition.Position[0])
-			if(cTargetAngle.GetValue() < 0) 
-				cTargetAngle.SetValue(cTargetAngle.GetValue() + 360);
-		
-		else 
-			cTargetAngle.SetValue(cTargetAngle.GetValue() + 180);
+		if(cTargetAngle.GetValue() < 0) 
+			cTargetAngle.SetValue(cTargetAngle.GetValue() + 360);
+
+		if(cTargetAngle.GetValue() > 360) 
+			cTargetAngle.SetValue(cTargetAngle.GetValue() - 360);
 
 		cTargetAngle.SetValue(cTargetAngle.GetValue() - cActualAngle.GetValue());
 		cHeadingAngle += ToRadians(cTargetAngle).SignedNormalize();
