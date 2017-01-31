@@ -285,6 +285,20 @@ public:
 	UInt32 m_UnTargetFound;
 	UInt32 m_UnObjectFoundExploring;
 
+	/* Variables used by the cost estimation partitioning */
+	Real rNumElemN;	// Number of partitions
+	UInt32 m_UnPartChos;	// Partition chosen
+	Real rDisStep;	// Discretization step
+	Real rMemFacAl;	// Memory factor
+	Real rEstDistD;	// Estimated distance nest-source 
+	Real rsetL[99];	// Set of partition lengths
+	Real rsetC[99];	// Set of costs
+	Real rLastTripC;// Cost associated with the last trip
+	Real rGrFacEps; // Greedy factor
+	Real rTimeNav;	// Time spent navigating
+	Real rTimeGripp;// Time spent gripping
+	Real rTimeExp;	// Time spent exploring
+
 	Real fSpeed1, fSpeed2;
 
 	Real rSuccessRate; // Variable used for exponential mechanism
