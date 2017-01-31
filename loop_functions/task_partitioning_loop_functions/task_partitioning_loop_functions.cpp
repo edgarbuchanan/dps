@@ -50,13 +50,13 @@ void CForagingLoopFunctions::Init(TConfigurationNode& t_node) {
 		 */
 		GetNodeAttribute(tForaging, "output", m_strOutput);
 		m_cOutput.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
-		m_cOutput << "# clock,\tcollected_food,\tsubtasks_average,\tdistance_average,\tsearch,\t"
+		m_cOutput << "# Clock,\tcollected_food,\tsubtasks_average,\tdistance_average,\tsearch,\t"
 				"handle_objects,\tnavigate,\tlost_source,\tdistance_robots," << std::endl;
 
 		/* transferpoints file */
 		GetNodeAttribute(tForaging, "transfer_points", m_strTransferPoints);
 		m_cTransferPoints.open(m_strTransferPoints.c_str(), std::ios_base::trunc | std::ios_base::out);
-		m_cTransferPoints << "X,\tY," << std::endl;
+		m_cTransferPoints << "# Clock, X, Y, Z, ID, P, SuccessRate" << std::endl;
 
 		/* Get parameters for model */
 		GetNodeAttribute(tForaging, "params_for_model", m_strParamsForModel);
@@ -82,13 +82,13 @@ void CForagingLoopFunctions::Reset() {
 	 */
 	m_cOutput.close();
 	m_cOutput.open(m_strOutput.c_str(), std::ios_base::trunc | std::ios_base::out);
-	m_cOutput << "# clock,\tcollected_food,\tsubtasks_average,\tdistance_average,\tsearch,\thandle_objects,"
+	m_cOutput << "# Clock,\tcollected_food,\tsubtasks_average,\tdistance_average,\tsearch,\thandle_objects,"
 			"\tnavigate,\tlost_source,\tdistance_robots," << std::endl;
 
 	/* transferpoints file */
 	m_cTransferPoints.close();
 	m_cTransferPoints.open(m_strTransferPoints.c_str(), std::ios_base::trunc | std::ios_base::out);
-	m_cTransferPoints << "X,\tY," << std::endl;
+	m_cTransferPoints << "# Clock, X, Y, Z, ID, P, SuccessRate" << std::endl;
 
 	/* paramsformodel file */
 	m_cParamsForModel.close();
@@ -317,10 +317,11 @@ void CForagingLoopFunctions::PreStep() {
 					 * otherwise leave commented to decrease computation time  */
 					// m_pcFloor->SetChanged();
 				}
-				m_cTransferPoints 	<< cController.cSourcePosition 	<< ","
-									<< cController.m_UnRobotId		<< ","
-									<< cController.rTravellingDistance << ","
-									<< cController.rSuccessRate << std::endl;
+				m_cTransferPoints 	<< GetSpace().GetSimulationClock() << ","	
+								<< cController.cSourcePosition 	<< ","
+								<< cController.m_UnRobotId		<< ","
+								<< cController.rTravellingDistance << ","
+								<< cController.rSuccessRate << std::endl;
 			}
 		}
 

@@ -252,6 +252,21 @@ void CFootBotForager::Reset() {
 	m_UnGotLost = 0;	// Counter used whenever an item is not found after neighbourhood exploration
 	m_UnTargetFound = 0;	// Counter used whenever an item is found after neighbourhood exploration
 	m_UnObjectFoundExploring = 0; // Counter used whenever an item is not found after exploring state
+	/* Variables used for the cost estimation approach */
+	rNumElemN = 0.0;	// Number of partitions
+	rDisStep = 0.5;	// Discretization step (m)
+	rMemFacAl = 0.25;	// Memory factor (Best)
+	rEstDistD = 0.0;	// Estimated distance nest-source
+	m_UnPartChos = 0;	// Partition chosen 
+	for(int i = 0; i < 99; i++){
+		rsetL[i] = 4.0;
+		rsetC[i] = m_pcRNG->Uniform(m_sStateData.ProbRange);
+	}
+	rLastTripC = 0.0;// Cost associated with the last trip
+	rGrFacEps = 0.0; // Greedy factor (Best)
+	rTimeNav = 0.0;	// Time spent navigating
+	rTimeGripp = 0.0;// Time spent gripping
+	rTimeExp = 0.0;	// Time spent exploring
 
 	rSuccessRate = 0;
 	bSucccesFlag = false;
@@ -412,6 +427,42 @@ void CFootBotForager::PartitionLength(bool bSearchResult) {
 			}
 
 			break;
+		case 5:
+			if(bSearchResult){ 
+				rTotalDistance = Distance(cSourcePosition, cNestPosition);
+				// If understimates update distances
+				if(rEstDistD < rTotalDistance){
+					rEstDistD = rTotalDistance;
+					rNumElemN = floor(rEstDistD / rDisStep);
+					for(int i = 0; i < rNumElemN; i++){
+						rsetL[i] = rDisStep * (i + 1);
+					}  
+				}
+				// Update costs
+				rLastTripC = (rEstDistD / rsetL[m_UnPartChos]) * (rTimeNav +
+					rTimeGripp) + rTimeExp;
+   				rsetC[m_UnPartChos] = (1.0 - rMemFacAl) * rsetC[m_UnPartChos] +
+					rMemFacAl * rLastTripC;
+				// Find min cost
+				Real rMinCost = rsetC[0];
+				for(int i = 0; i < rNumElemN; i++){
+					if(rsetC[i] <= rMinCost){
+						rMinCost = rsetC[i];
+						m_UnPartChos = i;
+					} 
+				}
+				// Define lower limit
+				rTravellingDistance = rsetL[m_UnPartChos];
+				rLowerRegionLimit = rTotalDistance - rTravellingDistance;
+				if(rLowerRegionLimit < lowerLimitConstant) 
+					rLowerRegionLimit = 0.01;
+
+				// Reset timers
+				rTimeNav = 0.0;
+				rTimeGripp = 0.0;
+				rTimeExp = 0.0;
+			}
+			break;
 		default: {
 			LOGERR << "Wrong partition type selected!" << std::endl;
 			break;
@@ -441,8 +492,17 @@ void CFootBotForager::UpdateState() {
 	m_sStateData.InNest = false;
 	/* Read ground sensor */
 	const CCI_FootBotMotorGroundSensor::TReadings& tGroundReads = m_pcGround->GetReadings();
-	if(tGroundReads[2].Value == 0.0f && tGroundReads[3].Value == 0.0f)  // Check if robot is in nest
+	if(tGroundReads[2].Value == 0.0f && tGroundReads[3].Value == 0.0f){  // Check if robot is in nest
 		m_sStateData.InNest = true;
+		// If actual distance is shorter than length selected, choose a shorten distance
+		if(rTotalDistance <= rsetL[m_UnPartChos]){
+			for(int i = 0; i < rNumElemN; i++){
+				m_UnPartChos = i;
+				if(rTotalDistance <= rsetL[i])
+					break;
+			}
+		}
+	}
 	
 }
 
@@ -671,6 +731,7 @@ void CFootBotForager::SetWheelSpeedsFromVector(const CVector2& c_heading) {
 		}
 		m_unHandoverCounter++;
 		m_UnHandleObjectsTimer++;
+		rTimeGripp++;
 		/* Communicate with food robot */
 		if(IsReturningToNest() && m_unHandoverCounter == 5){
 			const CCI_RangeAndBearingSensor::TReadings& tPackets = m_pcRABS->GetReadings();
@@ -760,7 +821,10 @@ void CFootBotForager::Explore() {
 
 		/* Get the diffusion vector to perform obstacle avoidance */
 		bool bCollision;
-		if(!bHandoverFlag) m_UnSearchTimer++;
+		if(!bHandoverFlag) {
+			rTimeExp++;
+			m_UnSearchTimer++;
+		}
 		CVector2 cDiffusion = DiffusionVector(bCollision);
 		SetWheelSpeedsFromVector(m_sWheelTurningParams.MaxSpeed * cDiffusion);
 	}
@@ -774,7 +838,10 @@ void CFootBotForager::GoToNest() {
 
 	UpdateState();
 	m_pcRABA->SetData(1, 0);
-	if(!bHandoverFlag) m_UnNavigateTimer++;
+	if(!bHandoverFlag) {
+		m_UnNavigateTimer++;
+		rTimeNav++;
+	}
 	bSucccesFlag = false;
 
 	/* If robot is inside of the nest enter to go to source state */
@@ -822,7 +889,10 @@ void CFootBotForager::GoToNest() {
 void CFootBotForager::GoToSource() {
 
 	const CCI_PositioningSensor::SReading& tPosition = m_pcPositioning->GetReading();
-	if(!bHandoverFlag) m_UnNavigateTimer++;
+	if(!bHandoverFlag){
+		rTimeNav++;
+		m_UnNavigateTimer++;
+	}
 
 	/* If the estimated distance to the source is not decreasing over 30s enter to exploration state.
 	 * This is done to detect whether the estimated position is out of range.
@@ -886,7 +956,10 @@ void CFootBotForager::GoToSource() {
 void CFootBotForager::NeighborhoodExploration() {
 
 	const CCI_PositioningSensor::SReading& tPosition = m_pcPositioning->GetReading();
-	if(!bHandoverFlag) m_UnSearchTimer++;
+	if(!bHandoverFlag) {
+		rTimeExp;
+		m_UnSearchTimer++;
+	}
 	m_unNighbourhoodExplorationTimer++;
 	Camera();
 
@@ -936,8 +1009,10 @@ void CFootBotForager::WaitForTransfer() {
 	m_pcWheels->SetLinearVelocity(0, 0);
 	m_pcRABA->SetData(1, 0); 
 	m_unWaitingTransferTimer++;
-	if(!bHandoverFlag) m_UnHandleObjectsTimer++;
-
+	if(!bHandoverFlag) {
+		rTimeGripp++;
+		m_UnHandleObjectsTimer++;
+	}
 	/*
 	 * Wait up to 3 minutes for a robot to come and take the object
 	 * This is done in order to avoid deadlocks where all robots are waiting forever

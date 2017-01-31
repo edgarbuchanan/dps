@@ -53,7 +53,8 @@
 			<!-- * Parameters for the task partitioning experiment * -->
 			<!-- * Accumulative error (Sigma = 27)                 * -->			
 			<!-- * Initial travelling distance (Po in decimeters)  * -->
-			<!-- * Partition type: 1. DPS 2. DPS-S 3. DPS-E        * -->
+			<!-- * Partition type: 1. NPS 2. SPS 3. DPS-S          * -->
+			<!-- * 4. DPS-E 5. CPS					       * -->
 			<!-- * Travelling gain (G in decimeters)               * -->
 			<!-- * Travelling differential (Alpha for DPS-E)       * -->
 			<!-- * Correction rate (Alpha)				 * -->
