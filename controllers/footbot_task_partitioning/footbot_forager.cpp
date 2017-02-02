@@ -352,6 +352,7 @@ CVector2 CFootBotForager::CalculateVectorToLight() {
  * Case 2: Static partition
  * Case 3: Dynamic partition with step mechanism
  * Case 4: Dynamic partition with exponential mechanism
+ * Case 5: Cost estimation approach
  */
 void CFootBotForager::PartitionLength(bool bSearchResult) {
 	const CCI_PositioningSensor::SReading& tPosition = m_pcPositioning->GetReading();

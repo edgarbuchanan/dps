@@ -238,7 +238,7 @@ void CForagingLoopFunctions::PreStep() {
 			}
 
 			/* Try to replace items in source */
-			if(2.5 < cPos.GetY()){
+			if(rNestSourceDistance / 200 + 0.5 < cPos.GetY()){
 				CVector3 cMoveOrigin;
 				cMoveOrigin.Set(0, 0, 0);
 				cFootBot.GetEmbodiedEntity().MoveTo(cSourcePosition,
