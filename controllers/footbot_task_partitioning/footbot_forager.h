@@ -130,6 +130,8 @@ public:
 		Real rTravellingDifferential;
 		Real rCorrectionRate;
 		UInt32 m_unItemTransfTime;
+		Real rMemFacAl;	
+		Real rGrFacEps;
 
 		/* Parses the XML section for diffusion */
 		void Init(TConfigurationNode& t_tree);
@@ -289,12 +291,10 @@ public:
 	Real rNumElemN;	// Number of partitions
 	UInt32 m_UnPartChos;	// Partition chosen
 	Real rDisStep;	// Discretization step
-	Real rMemFacAl;	// Memory factor
 	Real rEstDistD;	// Estimated distance nest-source 
 	Real rsetL[99];	// Set of partition lengths
 	Real rsetC[99];	// Set of costs
 	Real rLastTripC;// Cost associated with the last trip
-	Real rGrFacEps; // Greedy factor
 	Real rTimeNav;	// Time spent navigating
 	Real rTimeGripp;// Time spent gripping
 	Real rTimeExp;	// Time spent exploring

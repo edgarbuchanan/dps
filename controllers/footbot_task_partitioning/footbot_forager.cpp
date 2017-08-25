@@ -86,6 +86,8 @@ void CFootBotForager::SErrorParams::Init(TConfigurationNode& t_node) {
       GetNodeAttribute(t_node, "travelling_differential", rTravellingDifferential);
       GetNodeAttribute(t_node, "correction_rate", rCorrectionRate);
       GetNodeAttribute(t_node, "item_transfer_time", m_unItemTransfTime);
+      GetNodeAttribute(t_node, "epsilon", rGrFacEps);
+      GetNodeAttribute(t_node, "memory_factor", rMemFacAl);
    }
    catch(CARGoSException& ex) {
       THROW_ARGOSEXCEPTION_NESTED("Error initializing controller wheel turning parameters.", ex);
@@ -255,7 +257,6 @@ void CFootBotForager::Reset() {
 	/* Variables used for the cost estimation approach */
 	rNumElemN = 0.0;	// Number of partitions
 	rDisStep = 0.5;	// Discretization step (m)
-	rMemFacAl = 0.25;	// Memory factor (Best)
 	rEstDistD = 0.0;	// Estimated distance nest-source
 	m_UnPartChos = 0;	// Partition chosen 
 	for(int i = 0; i < 99; i++){
@@ -263,7 +264,6 @@ void CFootBotForager::Reset() {
 		rsetC[i] = m_pcRNG->Uniform(m_sStateData.ProbRange);
 	}
 	rLastTripC = 0.0;// Cost associated with the last trip
-	rGrFacEps = 0.0; // Greedy factor (Best)
 	rTimeNav = 0.0;	// Time spent navigating
 	rTimeGripp = 0.0;// Time spent gripping
 	rTimeExp = 0.0;	// Time spent exploring
@@ -442,15 +442,20 @@ void CFootBotForager::PartitionLength(bool bSearchResult) {
 				// Update costs
 				rLastTripC = (rEstDistD / rsetL[m_UnPartChos]) * (rTimeNav +
 					rTimeGripp) + rTimeExp;
-   				rsetC[m_UnPartChos] = (1.0 - rMemFacAl) * rsetC[m_UnPartChos] +
-					rMemFacAl * rLastTripC;
+   				rsetC[m_UnPartChos] = (1.0 - m_sErrorParams.rMemFacAl) * rsetC[m_UnPartChos] +
+					m_sErrorParams.rMemFacAl * rLastTripC;
 				// Find min cost
-				Real rMinCost = rsetC[0];
-				for(int i = 0; i < rNumElemN; i++){
-					if(rsetC[i] <= rMinCost){
-						rMinCost = rsetC[i];
-						m_UnPartChos = i;
-					} 
+				if(m_pcRNG->Uniform(m_sStateData.ProbRange) > m_sErrorParams.rGrFacEps){
+				  Real rMinCost = rsetC[0];
+				  for(int i = 0; i < rNumElemN; i++){
+					  if(rsetC[i] <= rMinCost){
+						  rMinCost = rsetC[i];
+						  m_UnPartChos = i;
+					  } 
+				  }
+				}
+				else{
+				  m_UnPartChos = floor((m_pcRNG->Uniform(m_sStateData.ProbRange) / 100.0) * rNumElemN); 
 				}
 				// Define lower limit
 				rTravellingDistance = rsetL[m_UnPartChos];
